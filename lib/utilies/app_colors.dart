@@ -1,0 +1,21 @@
+import 'package:flutter/material.dart';
+
+class AppColors {
+  // Primary color for Plant app
+  static var primaryColor = const Color(0xff296e48);
+  static var blackColor = Colors.black54;
+  
+  // Legacy color names for compatibility
+  static const Color grey = Colors.grey;
+  static Color grey1 = Colors.grey.shade100;
+  static Color grey2 = Colors.grey.shade200;
+  static Color grey3 = Colors.grey.shade300;
+  static const Color white = Colors.white;
+  static const Color green = Colors.green;
+  static const Color yellow = Colors.yellow;
+  static const Color black = Colors.black;
+  static const Color black45 = Colors.black45;
+  static const Color blue = Colors.blue;
+  static const Color red = Colors.red;
+  static const Color primary = Color(0xff296e48); // Plant green
+}
