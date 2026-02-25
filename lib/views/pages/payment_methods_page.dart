@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:project1/models/payment_card_model.dart';
+import 'package:project1/services/payment_card_service.dart';
 import 'package:project1/utilies/constants.dart';
+import 'package:project1/views/widgets/add_payment_card_dialog.dart';
 
 class PaymentMethodsPage extends StatefulWidget {
   const PaymentMethodsPage({super.key});
@@ -25,23 +24,62 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
   Future<void> _loadPaymentMethods() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final user = FirebaseAuth.instance.currentUser;
-      final String key = user != null ? '${user.uid}_payment_cards' : 'guest_payment_cards';
-      
-      final jsonString = prefs.getString(key);
-      if (jsonString != null) {
-        final jsonList = jsonDecode(jsonString) as List;
-        setState(() {
-          _paymentCards = jsonList
-              .map((item) => PaymentCardModel.fromMap(item as Map<String, dynamic>))
-              .toList();
-        });
-      }
+      final cards = await PaymentCardService.loadCards();
+      setState(() {
+        _paymentCards = cards;
+      });
     } catch (e) {
       print('Error loading payment methods: $e');
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _addPaymentCard() async {
+    final result = await showDialog<PaymentCardModel>(
+      context: context,
+      builder: (context) => const AddPaymentCardDialog(),
+    );
+
+    if (result != null) {
+      await PaymentCardService.addCard(result);
+      await _loadPaymentMethods();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment card added successfully')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteCard(PaymentCardModel card) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Card'),
+        content: const Text('Are you sure you want to delete this card?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await PaymentCardService.deleteCard(card.id);
+      await _loadPaymentMethods();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Card deleted')),
+        );
+      }
     }
   }
 
@@ -53,12 +91,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: Add new card functionality
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Add new card feature coming soon')),
-              );
-            },
+            onPressed: _addPaymentCard,
           ),
         ],
       ),
@@ -90,12 +123,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
-                        onPressed: () {
-                          // TODO: Add new card
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Add new card feature coming soon')),
-                          );
-                        },
+                        onPressed: _addPaymentCard,
                         icon: const Icon(Icons.add),
                         label: const Text('Add Payment Method'),
                         style: ElevatedButton.styleFrom(
@@ -143,9 +171,19 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
                                               fontWeight: FontWeight.bold,
                                             ),
                                       ),
-                                      Icon(
-                                        Icons.credit_card,
-                                        color: Colors.white,
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.credit_card,
+                                            color: Colors.white,
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete, color: Colors.white70),
+                                            onPressed: () => _deleteCard(card),
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),

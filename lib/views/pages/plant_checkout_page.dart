@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:project1/models/product_item_model.dart';
 import 'package:project1/models/location_model.dart';
 import 'package:project1/models/payment_card_model.dart';
+import 'package:project1/models/order_model.dart';
 import 'package:project1/utilies/constants.dart';
 import 'package:project1/views/pages/addresses_page.dart';
 import 'package:project1/views/pages/payment_methods_page.dart';
 import 'package:project1/views/pages/root_page.dart';
 import 'package:project1/services/location_service.dart';
+import 'package:project1/services/order_service.dart';
+import 'package:project1/services/payment_card_service.dart';
 
 class PlantCheckoutPage extends StatefulWidget {
   final List<Plant> cartItems;
@@ -47,12 +50,16 @@ class _PlantCheckoutPageState extends State<PlantCheckoutPage> {
     }
   }
 
-  void _loadDefaultPayment() {
-    // Use dummy payment for demo
-    if (dummyPaymentCards.isNotEmpty) {
-      setState(() {
-        _selectedPaymentMethod = dummyPaymentCards.first;
-      });
+  Future<void> _loadDefaultPayment() async {
+    try {
+      final cards = await PaymentCardService.loadCards();
+      if (cards.isNotEmpty && mounted) {
+        setState(() {
+          _selectedPaymentMethod = cards.first;
+        });
+      }
+    } catch (e) {
+      print('Error loading payment method: $e');
     }
   }
 
@@ -437,13 +444,36 @@ class _PlantCheckoutPageState extends State<PlantCheckoutPage> {
            widget.cartItems.isNotEmpty;
   }
 
-  void _placeOrder() {
+  Future<void> _placeOrder() async {
+    // Create order
+    final order = OrderModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      orderDate: DateTime.now(),
+      totalAmount: _total,
+      deliveryAddress: _selectedAddress?.address ?? 'Unknown',
+      paymentMethod: _selectedPaymentMethod!= null 
+          ? 'Card ending in ${_selectedPaymentMethod!.cardNumber.substring(_selectedPaymentMethod!.cardNumber.length - 4)}'
+          : 'Unknown',
+      items: widget.cartItems.map((plant) => OrderItem(
+        plantId: plant.plantId.toString(),
+        plantName: plant.plantName,
+        plantImage: plant.imageURL,
+        price: plant.price.toDouble(),
+        quantity: 1, // You can add quantity logic if needed
+      )).toList(),
+      status: 'pending',
+    );
+
+    // Save order
+    await OrderService.addOrder(order);
+
     // Clear cart
     for (var item in widget.cartItems) {
       item.isSelected = false;
     }
 
     // Show success dialog
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
