@@ -8,7 +8,6 @@ import 'package:project1/views/widgets/profile_widget.dart';
 import 'package:project1/views/pages/addresses_page.dart';
 import 'package:project1/views/pages/payment_methods_page.dart';
 import 'package:project1/views/pages/my_orders_page.dart';
-import 'package:project1/views/pages/settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -211,16 +210,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => const PaymentMethodsPage()),
-                      );
-                    },
-                  ),
-                  ProfileOption(
-                    icon: Icons.settings,
-                    title: 'Settings',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SettingsPage()),
                       );
                     },
                   ),

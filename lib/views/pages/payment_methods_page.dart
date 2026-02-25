@@ -83,6 +83,22 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
     }
   }
 
+  Future<void> _selectCard(PaymentCardModel selectedCard) async {
+    // Update all cards - mark selected as chosen, others as not chosen
+    final updatedCards = _paymentCards.map((card) {
+      return card.copyWith(isChosen: card.id == selectedCard.id);
+    }).toList();
+    
+    await PaymentCardService.saveCards(updatedCards);
+    await _loadPaymentMethods();
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Default card updated')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -143,8 +159,17 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
                       final card = _paymentCards[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Card(
-                          child: Container(
+                        child: GestureDetector(
+                          onTap: () => _selectCard(card),
+                          child: Card(
+                            elevation: card.isChosen ? 4 : 1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: card.isChosen
+                                  ? BorderSide(color: Constants.primaryColor, width: 2)
+                                  : BorderSide.none,
+                            ),
+                            child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
                               gradient: LinearGradient(
@@ -161,15 +186,48 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        'VISA',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall
-                                            ?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'VISA',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+                                          if (card.isChosen) ...[
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.check_circle,
+                                                    size: 16,
+                                                    color: Constants.primaryColor,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    'Default',
+                                                    style: TextStyle(
+                                                      color: Constants.primaryColor,
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
+                                          ],
+                                        ],
                                       ),
                                       Row(
                                         children: [
@@ -254,6 +312,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
                             ),
                           ),
                         ),
+                      ),
                       );
                     },
                   ),

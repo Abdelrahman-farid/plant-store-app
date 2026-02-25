@@ -55,7 +55,11 @@ class _PlantCheckoutPageState extends State<PlantCheckoutPage> {
       final cards = await PaymentCardService.loadCards();
       if (cards.isNotEmpty && mounted) {
         setState(() {
-          _selectedPaymentMethod = cards.first;
+          // Load the chosen card, or the first card if none is chosen
+          _selectedPaymentMethod = cards.firstWhere(
+            (card) => card.isChosen,
+            orElse: () => cards.first,
+          );
         });
       }
     } catch (e) {
