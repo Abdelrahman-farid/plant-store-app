@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:project1/utilies/constants.dart';
 import 'package:project1/views/widgets/profile_widget.dart';
 import 'package:project1/views/pages/addresses_page.dart';
@@ -17,9 +18,10 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String _userName = 'John Doe';
-  String _userEmail = 'johndoe@gmail.com';
+  String _userName = 'Guest User';
+  String _userEmail = 'guest@example.com';
   String? _profileImagePath;
+  String? _profileImageUrl; // Google/Facebook photo URL
   bool _notificationsEnabled = true;
   final ImagePicker _picker = ImagePicker();
 
@@ -30,23 +32,55 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userName = prefs.getString('user_name') ?? 'John Doe';
-      _userEmail = prefs.getString('user_email') ?? 'johndoe@gmail.com';
-      _profileImagePath = prefs.getString('profile_image_path');
-      _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-    });
+    
+    if (user != null) {
+      // Get user ID for per-user data storage
+      final userId = user.uid;
+      
+      setState(() {
+        // Load from Firebase Auth (real data)
+        _userName = user.displayName ?? prefs.getString('${userId}_user_name') ?? 'User';
+        _userEmail = user.email ?? 'No email';
+        _profileImageUrl = user.photoURL; // Google/Facebook photo
+        
+        // Load custom photo if set (overrides Google/Facebook photo)
+        _profileImagePath = prefs.getString('${userId}_profile_image_path');
+        _notificationsEnabled = prefs.getBool('${userId}_notifications_enabled') ?? true;
+      });
+    } else {
+      // Guest mode
+      setState(() {
+        _userName = prefs.getString('guest_user_name') ?? 'Guest User';
+        _userEmail = prefs.getString('guest_user_email') ?? 'guest@example.com';
+        _profileImagePath = prefs.getString('guest_profile_image_path');
+        _notificationsEnabled = prefs.getBool('guest_notifications_enabled') ?? true;
+      });
+    }
   }
 
   Future<void> _saveUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_name', _userName);
-    await prefs.setString('user_email', _userEmail);
-    if (_profileImagePath != null) {
-      await prefs.setString('profile_image_path', _profileImagePath!);
+    
+    if (user != null) {
+      final userId = user.uid;
+      await prefs.setString('${userId}_user_name', _userName);
+      await prefs.setString('${userId}_user_email', _userEmail);
+      if (_profileImagePath != null) {
+        await prefs.setString('${userId}_profile_image_path', _profileImagePath!);
+      }
+      await prefs.setBool('${userId}_notifications_enabled', _notificationsEnabled);
+    } else {
+      // Guest mode
+      await prefs.setString('guest_user_name', _userName);
+      await prefs.setString('guest_user_email', _userEmail);
+      if (_profileImagePath != null) {
+        await prefs.setString('guest_profile_image_path', _profileImagePath!);
+      }
+      await prefs.setBool('guest_notifications_enabled', _notificationsEnabled);
     }
-    await prefs.setBool('notifications_enabled', _notificationsEnabled);
   }
 
   @override
@@ -77,8 +111,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           backgroundColor: Colors.transparent,
                           backgroundImage: _profileImagePath != null
                               ? FileImage(File(_profileImagePath!))
-                              : const ExactAssetImage('assets/images/profile.jpg')
-                                  as ImageProvider,
+                              : _profileImageUrl != null
+                                  ? NetworkImage(_profileImageUrl!)
+                                  : const ExactAssetImage('assets/images/profile.jpg')
+                                      as ImageProvider,
                         ),
                       ),
                       Positioned(

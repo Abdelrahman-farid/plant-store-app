@@ -1,9 +1,19 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:project1/models/location_model.dart';
 
 class LocationService {
   static const String _addressesKey = 'saved_addresses';
+
+  // Get user-specific key for addresses
+  static String _getUserAddressesKey() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return '${user.uid}_$_addressesKey';
+    }
+    return 'guest_$_addressesKey';
+  }
 
   static Future<void> saveAddresses(List<LocationModel> addresses) async {
     try {
@@ -11,7 +21,7 @@ class LocationService {
       final jsonString = jsonEncode(
         addresses.map((addr) => addr.toMap()).toList(),
       );
-      await prefs.setString(_addressesKey, jsonString);
+      await prefs.setString(_getUserAddressesKey(), jsonString);
     } catch (e) {
       print('Error saving addresses: $e');
     }
@@ -20,11 +30,11 @@ class LocationService {
   static Future<List<LocationModel>> loadAddresses() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(_addressesKey);
+      final jsonString = prefs.getString(_getUserAddressesKey());
 
       if (jsonString == null) {
-        // Return default locations if no saved addresses
-        return List.from(dummyLocations);
+        // Return empty list - no demo data
+        return [];
       }
 
       final jsonList = jsonDecode(jsonString) as List;
@@ -34,7 +44,7 @@ class LocationService {
           .toList();
     } catch (e) {
       print('Error loading addresses: $e');
-      return List.from(dummyLocations);
+      return [];
     }
   }
 

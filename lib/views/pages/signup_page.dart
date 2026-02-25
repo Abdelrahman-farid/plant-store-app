@@ -47,7 +47,7 @@ class _SignUpState extends State<SignUp> {
           child: SingleChildScrollView(
             child: BlocConsumer<AuthCubit, AuthState>(
               listener: (context, state) {
-                if (state is AuthDone || state is GoogleAuthDone || state is FacebookAuthDone) {
+                if (state is AuthDone || state is GoogleAuthDone) {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (_) => const RootPage()),
@@ -56,14 +56,11 @@ class _SignUpState extends State<SignUp> {
                   _showError(state.message);
                 } else if (state is GoogleAuthError) {
                   _showError(state.message);
-                } else if (state is FacebookAuthError) {
-                  _showError(state.message);
                 }
               },
               builder: (context, state) {
                 final isLoading = state is AuthLoading || 
-                                  state is GoogleAuthenticating || 
-                                  state is FacebookAuthenticating;
+                                  state is GoogleAuthenticating;
 
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -201,48 +198,6 @@ class _SignUpState extends State<SignUp> {
                               ),
                             Text(
                               'Sign Up with Google',
-                              style: TextStyle(
-                                color: Constants.blackColor,
-                                fontSize: 18.0,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    GestureDetector(
-                      onTap: isLoading
-                          ? null
-                          : () {
-                              context.read<AuthCubit>().authenticateWithFacebook();
-                            },
-                      child: Container(
-                        width: size.width,
-                        decoration: BoxDecoration(
-                            border: Border.all(color: Constants.primaryColor),
-                            borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 15),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            if (isLoading && state is FacebookAuthenticating)
-                              const SizedBox(
-                                height: 30,
-                                width: 30,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            else
-                              Icon(
-                                Icons.facebook,
-                                color: Constants.primaryColor,
-                                size: 30,
-                              ),
-                            Text(
-                              'Sign Up with Facebook',
                               style: TextStyle(
                                 color: Constants.blackColor,
                                 fontSize: 18.0,
