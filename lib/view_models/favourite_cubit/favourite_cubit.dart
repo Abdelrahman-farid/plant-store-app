@@ -19,7 +19,9 @@ class FavoriteCubit extends SafeCubit<FavoriteState> {
         emit(FavoriteLoaded(const []));
         return;
       }
-      final favoriteProducts = await favoriteServices.getFavorites(currentUser.uid);
+      final favoriteProducts = await favoriteServices.getFavorites(
+        currentUser.uid,
+      );
       emit(FavoriteLoaded(favoriteProducts));
     } catch (e) {
       emit(FavoriteError(e.toString()));
@@ -27,6 +29,18 @@ class FavoriteCubit extends SafeCubit<FavoriteState> {
   }
 
   Future<void> removeFavorite(String productId) async {
+    final previousState = state;
+    List<ProductItemModel>? previousProducts;
+    if (previousState is FavoriteLoaded) {
+      previousProducts = List<ProductItemModel>.from(
+        previousState.favoriteProducts,
+      );
+      final updatedProducts = previousProducts
+          .where((item) => item.id != productId)
+          .toList();
+      emit(FavoriteLoaded(updatedProducts));
+    }
+
     emit(FavoriteRemoving(productId));
     try {
       final currentUser = authServices.currentUser();
@@ -34,18 +48,17 @@ class FavoriteCubit extends SafeCubit<FavoriteState> {
         emit(FavoriteRemoveError('Not logged in'));
         return;
       }
-      await favoriteServices.removeFavorite(
-        currentUser.uid,
-        productId,
-      );
+      await favoriteServices.removeFavorite(currentUser.uid, productId);
       emit(FavoriteRemoved(productId));
       final favoriteProducts = await favoriteServices.getFavorites(
         currentUser.uid,
       );
       emit(FavoriteLoaded(favoriteProducts));
     } catch (e) {
+      if (previousProducts != null) {
+        emit(FavoriteLoaded(previousProducts));
+      }
       emit(FavoriteRemoveError(e.toString()));
     }
-  
   }
 }

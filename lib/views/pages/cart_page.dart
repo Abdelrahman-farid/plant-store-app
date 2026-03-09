@@ -6,6 +6,7 @@ import 'package:project1/utilies/constants.dart';
 import 'package:project1/models/product_item_model.dart';
 import 'package:project1/view_models/cart_cubit/cart_cubit.dart';
 import 'package:project1/views/pages/checkout_page.dart';
+import 'package:project1/views/pages/plant_checkout_page.dart';
 import 'package:project1/views/widgets/counter_widget.dart';
 
 class CartPage extends StatefulWidget {
@@ -18,6 +19,8 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   late final CartCubit _cartCubit;
+
+  List<Plant> get _legacyCartItems => Plant.addedToCartPlants();
 
   Widget _buildEmptyCart() {
     return Center(
@@ -121,6 +124,173 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
+  Widget _buildLegacyCartItem(Plant plant) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Constants.primaryColor.withOpacity(.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      height: 80.0,
+      padding: const EdgeInsets.only(left: 10, top: 10),
+      margin: const EdgeInsets.only(bottom: 10, top: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 60.0,
+                height: 60.0,
+                decoration: BoxDecoration(
+                  color: Constants.primaryColor.withOpacity(.8),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Positioned(
+                bottom: 5,
+                left: 0,
+                right: 0,
+                child: SizedBox(
+                  height: 80.0,
+                  child: Image.asset(plant.imageURL),
+                ),
+              ),
+              Positioned(
+                bottom: 5,
+                left: 80,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      plant.category,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Constants.blackColor,
+                      ),
+                    ),
+                    Text(
+                      plant.plantName,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 16,
+                        color: Constants.blackColor.withOpacity(.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Text(
+                r'$' + plant.price.toString(),
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18.0,
+                  color: Constants.primaryColor,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Delete item',
+                onPressed: () {
+                  setState(() {
+                    plant.isSelected = false;
+                  });
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegacyCart(Size size) {
+    final legacyItems = _legacyCartItems;
+    if (legacyItems.isEmpty) {
+      return Scaffold(body: _buildEmptyCart());
+    }
+
+    final subtotal = legacyItems.fold<int>(
+      0,
+      (previousValue, element) => previousValue + element.price,
+    );
+
+    return Scaffold(
+      body: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        height: size.height,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: legacyItems.length,
+                physics: const BouncingScrollPhysics(),
+                itemBuilder: (context, index) {
+                  return _buildLegacyCartItem(legacyItems[index]);
+                },
+              ),
+            ),
+            const Divider(thickness: 1.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'Totals',
+                  style: TextStyle(fontSize: 23, fontWeight: FontWeight.w300),
+                ),
+                Text(
+                  '\$$subtotal',
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    color: Constants.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          PlantCheckoutPage(cartItems: legacyItems),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Constants.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 2,
+                ),
+                child: const Text(
+                  'Proceed to Checkout',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -152,6 +322,9 @@ class _CartPageState extends State<CartPage> {
         },
         builder: (context, state) {
           if (state is CartLoading || state is CartInitial) {
+            if (_legacyCartItems.isNotEmpty) {
+              return _buildLegacyCart(size);
+            }
             return const Scaffold(
               body: Center(child: CircularProgressIndicator.adaptive()),
             );
@@ -159,6 +332,9 @@ class _CartPageState extends State<CartPage> {
 
           if (state is CartLoaded) {
             if (state.cartItems.isEmpty) {
+              if (_legacyCartItems.isNotEmpty) {
+                return _buildLegacyCart(size);
+              }
               return Scaffold(body: _buildEmptyCart());
             }
 

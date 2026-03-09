@@ -4,13 +4,15 @@ A beautiful and modern plant shopping application built with **Flutter**. Browse
 
 ## 📥 Download APK
 
-**[Download Latest Release (v1.0.1)](https://github.com/Abdelrahman-farid/plant-store-app/releases/download/v1.0.1/app-release.apk)**
+**[Download Latest Release (v1.0.2)](https://github.com/Abdelrahman-farid/plant-store-app/releases/download/v1.0.2/app-release.apk)**
 
-### ✅ Latest Stability Update (v1.0.1)
+### ✅ Latest Stability Update (v1.0.2)
 - Fixed shopping cart quantity increase/decrease actions
 - Fixed removing items from cart
 - Fixed subtotal updates after cart changes
 - Stabilized checkout navigation flow (address/payment/cart -> checkout)
+- Fixed immediate UI update after removing favorites (no need to reopen page)
+- Fixed cart visibility for items added from the legacy product details flow
 
 ---
 
