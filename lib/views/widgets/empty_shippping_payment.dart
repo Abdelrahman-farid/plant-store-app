@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project1/utilies/app_colors.dart';
-import 'package:project1/utilies/app_routes.dart';
+import 'package:project1/view_models/choose_location_cubit/choose_location_cubit.dart';
 import 'package:project1/view_models/add_new_card_cubid/payment_methods_cubit.dart';
 import 'package:project1/view_models/checkout_cubit/checkout_cubit.dart';
+import 'package:project1/views/pages/add_new_card_page.dart';
+import 'package:project1/views/pages/choose_location_page.dart';
 
 class EmptyShippingAndPayment extends StatelessWidget {
   final String title;
@@ -23,12 +25,30 @@ class EmptyShippingAndPayment extends StatelessWidget {
       onTap: () {
         if (isPayment) {
           Navigator.of(context)
-              .pushNamed(AppRoutes.addNewCardRoute, arguments: paymentCubit)
-              .then(
-                (value) async => await checkoutCubit.getCheckoutContent(),
-              );
+              .push(
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: paymentCubit,
+                    child: const AddNewCardPage(),
+                  ),
+                ),
+              )
+              .then((value) async => await checkoutCubit.getCheckoutContent());
         } else {
-          Navigator.of(context).pushNamed(AppRoutes.chooseLocation);
+          Navigator.of(context)
+              .push(
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider(
+                    create: (context) {
+                      final cubit = ChooseLocationCubit();
+                      cubit.fetchLocations();
+                      return cubit;
+                    },
+                    child: const ChooseLocationPage(),
+                  ),
+                ),
+              )
+              .then((value) async => await checkoutCubit.getCheckoutContent());
         }
       },
       child: Container(
@@ -38,20 +58,11 @@ class EmptyShippingAndPayment extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16.0,
-            vertical: 24.0,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
           child: Column(
             children: [
-              const Icon(
-                Icons.add,
-                size: 30,
-              ),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
+              const Icon(Icons.add, size: 30),
+              Text(title, style: Theme.of(context).textTheme.labelLarge),
             ],
           ),
         ),

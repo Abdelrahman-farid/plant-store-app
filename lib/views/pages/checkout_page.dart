@@ -4,9 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project1/models/location_item_model.dart';
 import 'package:project1/models/payment_card_model.dart';
 import 'package:project1/utilies/app_colors.dart';
-import 'package:project1/utilies/app_routes.dart';
 import 'package:project1/view_models/add_new_card_cubid/payment_methods_cubit.dart';
+import 'package:project1/view_models/choose_location_cubit/choose_location_cubit.dart';
 import 'package:project1/view_models/checkout_cubit/checkout_cubit.dart';
+import 'package:project1/views/pages/choose_location_page.dart';
 import 'package:project1/views/widgets/checkout_headline_item.dart';
 import 'package:project1/views/widgets/empty_shippping_payment.dart';
 import 'package:project1/views/widgets/labe_with_value_row.dart';
@@ -144,7 +145,20 @@ class CheckoutPage extends StatelessWidget {
                               title: 'Address',
                               onTap: () {
                                 Navigator.of(context)
-                                    .pushNamed(AppRoutes.chooseLocation)
+                                    .push(
+                                      MaterialPageRoute(
+                                        builder: (_) => BlocProvider(
+                                          create: (context) {
+                                            final chooseLocationCubit =
+                                                ChooseLocationCubit();
+                                            chooseLocationCubit
+                                                .fetchLocations();
+                                            return chooseLocationCubit;
+                                          },
+                                          child: const ChooseLocationPage(),
+                                        ),
+                                      ),
+                                    )
                                     .then(
                                       (value) async =>
                                           await cubit.getCheckoutContent(),

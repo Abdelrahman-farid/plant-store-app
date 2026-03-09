@@ -7,7 +7,6 @@ part 'cart_state.dart';
 
 class CartCubit extends SafeCubit<CartState> {
   CartCubit() : super(CartInitial());
-  int quantity = 1;
 
   final cartServices = CartServicesImpl();
   final authServices = AuthServicesImpl();
@@ -32,13 +31,10 @@ class CartCubit extends SafeCubit<CartState> {
     AddToCartModel cartItem, [
     int? initialValue,
   ]) async {
-    if (initialValue != null) {
-      quantity = initialValue;
-    }
-    quantity++;
+    final nextQuantity = (initialValue ?? cartItem.quantity) + 1;
     try {
       emit(QuantityCounterLoading());
-      final updatedCartItem = cartItem.copyWith(quantity: quantity);
+      final updatedCartItem = cartItem.copyWith(quantity: nextQuantity);
       final currentUser = authServices.currentUser();
 
       if (currentUser == null) {
@@ -48,12 +44,12 @@ class CartCubit extends SafeCubit<CartState> {
       await cartServices.setCartItem(currentUser.uid, updatedCartItem);
       emit(
         QuantityCounterLoaded(
-          value: quantity,
+          value: nextQuantity,
           productId: updatedCartItem.product.id,
         ),
       );
       final cartItems = await cartServices.fetchCartItems(currentUser.uid);
-      emit(SubtotalUpdated(_subtotal(cartItems)));
+      emit(CartLoaded(cartItems, _subtotal(cartItems)));
     } catch (e) {
       emit(QuantityCounterError(e.toString()));
     }
@@ -63,13 +59,16 @@ class CartCubit extends SafeCubit<CartState> {
     AddToCartModel cartItem, [
     int? initialValue,
   ]) async {
-    if (initialValue != null) {
-      quantity = initialValue;
+    final currentQuantity = initialValue ?? cartItem.quantity;
+    if (currentQuantity <= 1) {
+      await removeCartItem(cartItem);
+      return;
     }
-    quantity--;
+    final nextQuantity = currentQuantity - 1;
+
     try {
       emit(QuantityCounterLoading());
-      final updatedCartItem = cartItem.copyWith(quantity: quantity);
+      final updatedCartItem = cartItem.copyWith(quantity: nextQuantity);
       final currentUser = authServices.currentUser();
 
       if (currentUser == null) {
@@ -79,14 +78,29 @@ class CartCubit extends SafeCubit<CartState> {
       await cartServices.setCartItem(currentUser.uid, updatedCartItem);
       emit(
         QuantityCounterLoaded(
-          value: quantity,
+          value: nextQuantity,
           productId: updatedCartItem.product.id,
         ),
       );
       final cartItems = await cartServices.fetchCartItems(currentUser.uid);
-      emit(SubtotalUpdated(_subtotal(cartItems)));
+      emit(CartLoaded(cartItems, _subtotal(cartItems)));
     } catch (e) {
       emit(QuantityCounterError(e.toString()));
+    }
+  }
+
+  Future<void> removeCartItem(AddToCartModel cartItem) async {
+    try {
+      final currentUser = authServices.currentUser();
+      if (currentUser == null) {
+        throw StateError('Not logged in');
+      }
+
+      await cartServices.deleteCartItem(currentUser.uid, cartItem.id);
+      final cartItems = await cartServices.fetchCartItems(currentUser.uid);
+      emit(CartLoaded(cartItems, _subtotal(cartItems)));
+    } catch (e) {
+      emit(CartError(e.toString()));
     }
   }
 
