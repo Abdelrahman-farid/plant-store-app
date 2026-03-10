@@ -16,14 +16,24 @@ A beautiful and modern plant shopping application built with **Flutter**. Browse
 
 ---
 
+## ⚠️ Current Limitations (Important)
+
+- **Email/Password Sign In and Sign Up are in demo mode** right now. The buttons currently navigate to the app directly (Firebase email/password call is disabled in UI code).
+- **Forgot Password screen is UI-only** at the moment (reset action is not connected to backend logic).
+- **Address map is a simulated picker**, not a live Google Maps integration yet.
+- **Real payment gateway is not integrated**. Saved cards are local app data for UI/demo flow.
+- **Checkout review does not support quantity +/- controls** yet (quantity updates are currently done from Cart page).
+- **Map/Billing note**: Enabling production map services may require a billing-enabled account/card in USD depending on provider setup.
+
+---
+
 ## ✨ Features
 
 ### 🔐 Authentication
-- **Sign In / Sign Up** with email and password
+- **Sign In / Sign Up** with email and password (currently demo mode)
 - **Google Sign-In** integration
-- **Facebook Sign-In** integration
 - **Guest Mode** for browsing without authentication
-- **Forgot Password** functionality
+- **Forgot Password** functionality (backend reset flow not connected yet)
 
 ### 🏠 Home & Browse
 - **Category Filtering**: Browse plants by Indoor, Outdoor, Garden, or Recommended
@@ -41,10 +51,9 @@ A beautiful and modern plant shopping application built with **Flutter**. Browse
 
 ### 🛒 Shopping Cart
 - **Add to Cart**: Add plants with quantity selection
-- **Update Quantities**: Increase or decrease item quantities
 - **Remove Items**: Delete products from cart
 - **Subtotal Calculation**: Real-time price updates
-- **Amazon-style Checkout**: Complete checkout flow with address and payment
+- **Checkout**: Complete checkout flow with address and payment
 
 ### ❤️ Favorites
 - **Wishlist Management**: Save your favorite plants
